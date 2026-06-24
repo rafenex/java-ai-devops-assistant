@@ -2,6 +2,7 @@ package br.com.rafael.aiassistant.service;
 
 import br.com.rafael.aiassistant.ai.AiProvider;
 import br.com.rafael.aiassistant.dto.*;
+import br.com.rafael.aiassistant.exception.NotFoundException;
 import br.com.rafael.aiassistant.model.ErrorAnalysis;
 import br.com.rafael.aiassistant.repository.ErrorAnalysisRepository;
 import org.springframework.stereotype.Service;
@@ -64,7 +65,7 @@ public class ErrorAnalysisService {
 
     public ErrorAnalysisDetailResponse findById(Long id) {
         ErrorAnalysis analysis = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Análise não encontrada: " + id));
+                .orElseThrow(() -> new NotFoundException("Análise não encontrada: " + id));
 
         return new ErrorAnalysisDetailResponse(
                 analysis.getId(),

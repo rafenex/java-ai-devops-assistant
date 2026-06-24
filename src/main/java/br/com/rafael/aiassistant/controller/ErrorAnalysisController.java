@@ -5,6 +5,7 @@ import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
 import br.com.rafael.aiassistant.dto.ErrorAnalysisDetailResponse;
 import br.com.rafael.aiassistant.dto.ErrorAnalysisHistoryResponse;
 import br.com.rafael.aiassistant.service.ErrorAnalysisService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class ErrorAnalysisController {
     }
 
     @PostMapping
-    public ResponseEntity<AiAnalysisResponse> analyze(@RequestBody AiAnalysisRequest request) {
+    public ResponseEntity<AiAnalysisResponse> analyze(@Valid @RequestBody AiAnalysisRequest request) {
         return ResponseEntity.ok(service.analyze(request));
     }
 
