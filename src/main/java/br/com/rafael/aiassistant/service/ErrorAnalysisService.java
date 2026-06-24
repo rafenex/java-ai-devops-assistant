@@ -36,7 +36,7 @@ public class ErrorAnalysisService {
                 aiResponse.suggestedFix(),
                 aiResponse.risk(),
                 aiResponse.category(),
-                "openai",
+                aiProvider.getProviderName(),
                 LocalDateTime.now()
         ));
 

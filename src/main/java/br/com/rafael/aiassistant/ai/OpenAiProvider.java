@@ -75,4 +75,8 @@ public class OpenAiProvider implements AiProvider {
         }
     }
 
+    @Override
+    public String getProviderName() {
+        return "openai";
+    }
 }

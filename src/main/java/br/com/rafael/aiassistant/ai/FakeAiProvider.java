@@ -23,4 +23,11 @@ public class FakeAiProvider implements AiProvider {
                 "SPRING"
         );
     }
+
+
+    @Override
+    public String getProviderName() {
+        return "fake";
+    }
+
 }
