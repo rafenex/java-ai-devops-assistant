@@ -1,14 +1,13 @@
 package br.com.rafael.aiassistant.service;
 
 import br.com.rafael.aiassistant.ai.AiProvider;
-import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
-import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
-import br.com.rafael.aiassistant.dto.AiProviderResponse;
+import br.com.rafael.aiassistant.dto.*;
 import br.com.rafael.aiassistant.model.ErrorAnalysis;
 import br.com.rafael.aiassistant.repository.ErrorAnalysisRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ErrorAnalysisService {
@@ -47,6 +46,38 @@ public class ErrorAnalysisService {
                 savedAnalysis.getSuggestedFix(),
                 savedAnalysis.getRisk(),
                 savedAnalysis.getCategory()
+        );
+    }
+
+    public List<ErrorAnalysisHistoryResponse> findAll() {
+        return repository.findAll()
+                .stream()
+                .map(analysis -> new ErrorAnalysisHistoryResponse(
+                        analysis.getId(),
+                        analysis.getTitle(),
+                        analysis.getCategory(),
+                        analysis.getProvider(),
+                        analysis.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    public ErrorAnalysisDetailResponse findById(Long id) {
+        ErrorAnalysis analysis = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Análise não encontrada: " + id));
+
+        return new ErrorAnalysisDetailResponse(
+                analysis.getId(),
+                analysis.getTitle(),
+                analysis.getContext(),
+                analysis.getStacktrace(),
+                analysis.getProbableCause(),
+                analysis.getWhereToLook(),
+                analysis.getSuggestedFix(),
+                analysis.getRisk(),
+                analysis.getCategory(),
+                analysis.getProvider(),
+                analysis.getCreatedAt()
         );
     }
 }
