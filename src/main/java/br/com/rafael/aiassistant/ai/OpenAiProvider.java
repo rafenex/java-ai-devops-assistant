@@ -1,6 +1,8 @@
 package br.com.rafael.aiassistant.ai;
+
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
 import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -13,9 +15,12 @@ import org.springframework.stereotype.Component;
 public class OpenAiProvider implements AiProvider {
 
     private final ChatClient chatClient;
+    private final ObjectMapper objectMapper;
 
-    public OpenAiProvider(ChatClient.Builder builder) {
+
+    public OpenAiProvider(ChatClient.Builder builder, ObjectMapper objectMapper) {
         this.chatClient = builder.build();
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -24,34 +29,33 @@ public class OpenAiProvider implements AiProvider {
                 .system("""
                         Você é um especialista Java/Spring Boot.
                         Analise erros técnicos de forma objetiva, prática e segura.
-                        Responda sempre no formato solicitado.
+                        
+                        Responda APENAS em JSON válido.
+                        Não use markdown.
+                        Não use ```json.
+                        Não escreva texto fora do JSON.
                         """)
                 .user("""
+                        Analise o erro abaixo.
+                        
                         Título:
                         %s
-
+                        
                         Contexto:
                         %s
-
+                        
                         Stacktrace:
                         %s
-
-                        Responda exatamente neste formato:
-
-                        Causa provável:
-                        ...
-
-                        Onde procurar:
-                        ...
-
-                        Correção sugerida:
-                        ...
-
-                        Risco:
-                        ...
-
-                        Categoria:
-                        ...
+                        
+                        Retorne exatamente este JSON:
+                        
+                        {
+                          "probableCause": "causa provável do erro",
+                          "whereToLook": "onde o desenvolvedor deve procurar",
+                          "suggestedFix": "correção sugerida",
+                          "risk": "risco ou impacto do problema",
+                          "category": "categoria do erro"
+                        }
                         """.formatted(
                         request.title(),
                         request.context(),
@@ -64,30 +68,11 @@ public class OpenAiProvider implements AiProvider {
     }
 
     private AiAnalysisResponse parseResponse(String content) {
-        return new AiAnalysisResponse(
-                extract(content, "Causa provável:", "Onde procurar:"),
-                extract(content, "Onde procurar:", "Correção sugerida:"),
-                extract(content, "Correção sugerida:", "Risco:"),
-                extract(content, "Risco:", "Categoria:"),
-                extract(content, "Categoria:", null)
-        );
+        try {
+            return objectMapper.readValue(content, AiAnalysisResponse.class);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Erro ao converter resposta da IA para JSON", exception);
+        }
     }
 
-    private String extract(String text, String start, String end) {
-        int startIndex = text.indexOf(start);
-
-        if (startIndex == -1) {
-            return "";
-        }
-
-        startIndex += start.length();
-
-        int endIndex = end == null ? text.length() : text.indexOf(end, startIndex);
-
-        if (endIndex == -1) {
-            endIndex = text.length();
-        }
-
-        return text.substring(startIndex, endIndex).trim();
-    }
 }
