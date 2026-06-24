@@ -2,8 +2,14 @@ package br.com.rafael.aiassistant.ai;
 
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
 import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+@ConditionalOnProperty(
+        name = "app.ai.provider",
+        havingValue = "fake",
+        matchIfMissing = true
+)
 @Component
 public class FakeAiProvider implements AiProvider {
 
