@@ -11,5 +11,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aiassistant-api
+    depends_on:
+      - postgres
+    environment:
+      APP_AI_PROVIDER: openai
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aiassistant
+      SPRING_DATASOURCE_USERNAME: aiassistant
+      SPRING_DATASOURCE_PASSWORD: aiassistant
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_data:
+
+
