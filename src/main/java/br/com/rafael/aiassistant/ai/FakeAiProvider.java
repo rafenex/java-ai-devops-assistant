@@ -1,7 +1,7 @@
 package br.com.rafael.aiassistant.ai;
 
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
-import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import br.com.rafael.aiassistant.dto.AiProviderResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 public class FakeAiProvider implements AiProvider {
 
     @Override
-    public AiAnalysisResponse analyzeError(AiAnalysisRequest request) {
-        return new AiAnalysisResponse(
+    public AiProviderResponse analyzeError(AiAnalysisRequest request) {
+        return new AiProviderResponse(
                 "Provável erro de configuração ou dependência no contexto: " + request.context(),
                 "Verifique controller, service, repository e application.properties.",
                 "Analise o stacktrace e identifique o primeiro erro causado pela aplicação.",

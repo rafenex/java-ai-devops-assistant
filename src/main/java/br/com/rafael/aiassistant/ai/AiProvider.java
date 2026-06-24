@@ -1,9 +1,9 @@
 package br.com.rafael.aiassistant.ai;
 
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
-import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import br.com.rafael.aiassistant.dto.AiProviderResponse;
 
 public interface AiProvider {
 
-    AiAnalysisResponse analyzeError(AiAnalysisRequest request);
+    AiProviderResponse analyzeError(AiAnalysisRequest request);
 }

@@ -1,7 +1,7 @@
 package br.com.rafael.aiassistant.ai;
 
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
-import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import br.com.rafael.aiassistant.dto.AiProviderResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,7 +24,7 @@ public class OpenAiProvider implements AiProvider {
     }
 
     @Override
-    public AiAnalysisResponse analyzeError(AiAnalysisRequest request) {
+    public AiProviderResponse analyzeError(AiAnalysisRequest request) {
         String content = chatClient.prompt()
                 .system("""
                         Você é um especialista Java/Spring Boot.
@@ -67,9 +67,9 @@ public class OpenAiProvider implements AiProvider {
         return parseResponse(content);
     }
 
-    private AiAnalysisResponse parseResponse(String content) {
+    private AiProviderResponse parseResponse(String content) {
         try {
-            return objectMapper.readValue(content, AiAnalysisResponse.class);
+            return objectMapper.readValue(content, AiProviderResponse.class);
         } catch (Exception exception) {
             throw new IllegalStateException("Erro ao converter resposta da IA para JSON", exception);
         }

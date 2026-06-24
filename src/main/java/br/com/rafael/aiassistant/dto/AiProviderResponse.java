@@ -1,7 +1,6 @@
 package br.com.rafael.aiassistant.dto;
 
-public record AiAnalysisResponse(
-        Long id,
+public record AiProviderResponse(
         String probableCause,
         String whereToLook,
         String suggestedFix,
