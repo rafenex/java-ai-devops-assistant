@@ -4,6 +4,7 @@ import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
 import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
 import br.com.rafael.aiassistant.dto.ErrorAnalysisDetailResponse;
 import br.com.rafael.aiassistant.dto.ErrorAnalysisHistoryResponse;
+import br.com.rafael.aiassistant.messaging.producer.ErrorAnalysisProducer;
 import br.com.rafael.aiassistant.service.ErrorAnalysisService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -16,14 +17,25 @@ import java.util.List;
 public class ErrorAnalysisController {
 
     private final ErrorAnalysisService service;
+    private final ErrorAnalysisProducer producer;
 
-    public ErrorAnalysisController(ErrorAnalysisService service) {
+    public ErrorAnalysisController(
+            ErrorAnalysisService service,
+            ErrorAnalysisProducer producer
+    ) {
         this.service = service;
+        this.producer = producer;
     }
 
     @PostMapping
     public ResponseEntity<AiAnalysisResponse> analyze(@Valid @RequestBody AiAnalysisRequest request) {
         return ResponseEntity.ok(service.analyze(request));
+    }
+
+    @PostMapping("/async")
+    public ResponseEntity<Void> analyzeAsync(@Valid @RequestBody AiAnalysisRequest request) {
+        producer.send(request);
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping
