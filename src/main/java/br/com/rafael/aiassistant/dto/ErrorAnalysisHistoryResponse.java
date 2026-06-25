@@ -7,6 +7,7 @@ public record ErrorAnalysisHistoryResponse(
         String title,
         String category,
         String provider,
+        String status,
         LocalDateTime createdAt
 ) {
 }

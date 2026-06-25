@@ -107,6 +107,8 @@ class ErrorAnalysisServiceTest {
         assertEquals("Erro ao subir aplicação", response.title());
         assertEquals("SPRING", response.category());
         assertEquals("fake", response.provider());
+        assertEquals("DONE", response.status());
+        assertNull(response.errorMessage());
 
         verify(repository).findById(id);
     }
@@ -150,7 +152,125 @@ class ErrorAnalysisServiceTest {
         assertEquals("Erro ao subir aplicação", response.getFirst().title());
         assertEquals("SPRING", response.getFirst().category());
         assertEquals("fake", response.getFirst().provider());
+        assertEquals("DONE", response.getFirst().status());
 
         verify(repository).findAll();
+    }
+
+    @Test
+    void createPendingAnalysis_ShouldSavePendingAnalysisAndReturnIdAndStatus() {
+        AiAnalysisRequest request = new AiAnalysisRequest(
+                "Erro ao subir aplicação",
+                "Spring Boot com PostgreSQL",
+                "UnsatisfiedDependencyException"
+        );
+
+        ErrorAnalysis savedEntity = new ErrorAnalysis(
+                request.title(),
+                request.context(),
+                request.stacktrace(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "fake",
+                LocalDateTime.now()
+        );
+
+        savedEntity.setId(1L);
+
+        when(aiProvider.getProviderName()).thenReturn("fake");
+        when(repository.save(any(ErrorAnalysis.class))).thenReturn(savedEntity);
+
+        var response = service.createPendingAnalysis(request);
+
+        assertNotNull(response);
+        assertEquals(1L, response.id());
+        assertEquals("PENDING", response.status());
+
+        verify(aiProvider).getProviderName();
+        verify(repository).save(any(ErrorAnalysis.class));
+    }
+
+    @Test
+    void processPendingAnalysis_ShouldProcessPendingAnalysisAndMarkAsDone() {
+        Long id = 1L;
+
+        ErrorAnalysis analysis = new ErrorAnalysis(
+                "Erro ao subir aplicação",
+                "Spring Boot com PostgreSQL",
+                "UnsatisfiedDependencyException",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "fake",
+                LocalDateTime.now()
+        );
+
+        AiProviderResponse aiResponse = new AiProviderResponse(
+                "Falha na criação de bean",
+                "Verifique service e repository",
+                "Corrija a dependência ausente",
+                "Aplicação não inicia",
+                "SPRING"
+        );
+
+        when(repository.findById(id)).thenReturn(Optional.of(analysis));
+        when(aiProvider.analyzeError(any(AiAnalysisRequest.class))).thenReturn(aiResponse);
+        when(aiProvider.getProviderName()).thenReturn("fake");
+
+        service.processPendingAnalysis(id);
+
+        assertEquals("Falha na criação de bean", analysis.getProbableCause());
+        assertEquals("Verifique service e repository", analysis.getWhereToLook());
+        assertEquals("Corrija a dependência ausente", analysis.getSuggestedFix());
+        assertEquals("Aplicação não inicia", analysis.getRisk());
+        assertEquals("SPRING", analysis.getCategory());
+        assertEquals("fake", analysis.getProvider());
+        assertEquals("DONE", analysis.getStatus().name());
+        assertNotNull(analysis.getProcessedAt());
+        assertNull(analysis.getErrorMessage());
+
+        verify(repository).findById(id);
+        verify(aiProvider).analyzeError(any(AiAnalysisRequest.class));
+        verify(aiProvider).getProviderName();
+    }
+
+    @Test
+    void processPendingAnalysis_ShouldMarkAsError_WhenAiProviderThrowsException() {
+        Long id = 1L;
+
+        ErrorAnalysis analysis = new ErrorAnalysis(
+                "Erro ao subir aplicação",
+                "Spring Boot com PostgreSQL",
+                "UnsatisfiedDependencyException",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "fake",
+                LocalDateTime.now()
+        );
+
+        when(repository.findById(id)).thenReturn(Optional.of(analysis));
+        when(aiProvider.analyzeError(any(AiAnalysisRequest.class)))
+                .thenThrow(new RuntimeException("Erro na IA"));
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> service.processPendingAnalysis(id)
+        );
+
+        assertEquals("Erro na IA", exception.getMessage());
+        assertEquals("ERROR", analysis.getStatus().name());
+        assertEquals("Erro na IA", analysis.getErrorMessage());
+        assertNotNull(analysis.getProcessedAt());
+
+        verify(repository).findById(id);
+        verify(aiProvider).analyzeError(any(AiAnalysisRequest.class));
     }
 }

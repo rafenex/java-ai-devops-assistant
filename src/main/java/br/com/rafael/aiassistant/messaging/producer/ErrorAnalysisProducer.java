@@ -2,6 +2,7 @@ package br.com.rafael.aiassistant.messaging.producer;
 
 import br.com.rafael.aiassistant.config.RabbitMQConfig;
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
+import br.com.rafael.aiassistant.messaging.dto.ErrorAnalysisMessage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -14,10 +15,10 @@ public class ErrorAnalysisProducer {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void send(AiAnalysisRequest request) {
+    public void send(Long analysisId) {
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.AI_REQUEST_QUEUE,
-                request
+                new ErrorAnalysisMessage(analysisId)
         );
     }
 }

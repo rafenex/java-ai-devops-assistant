@@ -1,8 +1,7 @@
 package br.com.rafael.aiassistant.messaging.consumer;
 
 import br.com.rafael.aiassistant.config.RabbitMQConfig;
-import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
-import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import br.com.rafael.aiassistant.messaging.dto.ErrorAnalysisMessage;
 import br.com.rafael.aiassistant.service.ErrorAnalysisService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +20,11 @@ public class ErrorAnalysisConsumer {
     }
 
     @RabbitListener(queues = RabbitMQConfig.AI_REQUEST_QUEUE)
-    public void consume(AiAnalysisRequest request) {
-        log.info("Mensagem recebida da fila para análise. title={}", request.title());
+    public void consume(ErrorAnalysisMessage message) {
+        log.info("Mensagem recebida da fila. analysisId={}", message.analysisId());
 
-        AiAnalysisResponse response = errorAnalysisService.analyze(request);
+        errorAnalysisService.processPendingAnalysis(message.analysisId());
 
-        log.info(
-                "Análise processada com sucesso. id={}, category={}, risk={}",
-                response.id(),
-                response.category(),
-                response.risk()
-        );
+        log.info("Análise assíncrona processada com sucesso. analysisId={}", message.analysisId());
     }
 }

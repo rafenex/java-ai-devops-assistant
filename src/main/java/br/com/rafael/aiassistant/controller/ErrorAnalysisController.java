@@ -2,6 +2,7 @@ package br.com.rafael.aiassistant.controller;
 
 import br.com.rafael.aiassistant.dto.AiAnalysisRequest;
 import br.com.rafael.aiassistant.dto.AiAnalysisResponse;
+import br.com.rafael.aiassistant.dto.ErrorAnalysisAsyncResponse;
 import br.com.rafael.aiassistant.dto.ErrorAnalysisDetailResponse;
 import br.com.rafael.aiassistant.dto.ErrorAnalysisHistoryResponse;
 import br.com.rafael.aiassistant.messaging.producer.ErrorAnalysisProducer;
@@ -33,9 +34,14 @@ public class ErrorAnalysisController {
     }
 
     @PostMapping("/async")
-    public ResponseEntity<Void> analyzeAsync(@Valid @RequestBody AiAnalysisRequest request) {
-        producer.send(request);
-        return ResponseEntity.accepted().build();
+    public ResponseEntity<ErrorAnalysisAsyncResponse> analyzeAsync(
+            @Valid @RequestBody AiAnalysisRequest request
+    ) {
+        ErrorAnalysisAsyncResponse response = service.createPendingAnalysis(request);
+
+        producer.send(response.id());
+
+        return ResponseEntity.accepted().body(response);
     }
 
     @GetMapping

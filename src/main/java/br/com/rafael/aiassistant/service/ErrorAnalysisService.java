@@ -4,8 +4,10 @@ import br.com.rafael.aiassistant.ai.AiProvider;
 import br.com.rafael.aiassistant.dto.*;
 import br.com.rafael.aiassistant.exception.NotFoundException;
 import br.com.rafael.aiassistant.model.ErrorAnalysis;
+import br.com.rafael.aiassistant.model.ErrorAnalysisStatus;
 import br.com.rafael.aiassistant.repository.ErrorAnalysisRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,8 +26,10 @@ public class ErrorAnalysisService {
         this.repository = repository;
     }
 
+    @Transactional
     public AiAnalysisResponse analyze(AiAnalysisRequest request) {
         AiProviderResponse aiResponse = aiProvider.analyzeError(request);
+        String providerName = aiProvider.getProviderName();
 
         ErrorAnalysis savedAnalysis = repository.save(new ErrorAnalysis(
                 request.title(),
@@ -36,9 +40,18 @@ public class ErrorAnalysisService {
                 aiResponse.suggestedFix(),
                 aiResponse.risk(),
                 aiResponse.category(),
-                aiProvider.getProviderName(),
+                providerName,
                 LocalDateTime.now()
         ));
+
+        savedAnalysis.markAsDone(
+                aiResponse.probableCause(),
+                aiResponse.whereToLook(),
+                aiResponse.suggestedFix(),
+                aiResponse.risk(),
+                aiResponse.category(),
+                providerName
+        );
 
         return new AiAnalysisResponse(
                 savedAnalysis.getId(),
@@ -50,6 +63,59 @@ public class ErrorAnalysisService {
         );
     }
 
+    @Transactional
+    public ErrorAnalysisAsyncResponse createPendingAnalysis(AiAnalysisRequest request) {
+        ErrorAnalysis savedAnalysis = repository.save(new ErrorAnalysis(
+                request.title(),
+                request.context(),
+                request.stacktrace(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                aiProvider.getProviderName(),
+                LocalDateTime.now()
+        ));
+
+        savedAnalysis.setStatus(ErrorAnalysisStatus.PENDING);
+
+        return new ErrorAnalysisAsyncResponse(
+                savedAnalysis.getId(),
+                savedAnalysis.getStatus().name()
+        );
+    }
+
+    @Transactional
+    public void processPendingAnalysis(Long analysisId) {
+        ErrorAnalysis analysis = repository.findById(analysisId)
+                .orElseThrow(() -> new NotFoundException("Análise não encontrada: " + analysisId));
+
+        analysis.markAsProcessing();
+
+        try {
+            AiAnalysisRequest request = new AiAnalysisRequest(
+                    analysis.getTitle(),
+                    analysis.getContext(),
+                    analysis.getStacktrace()
+            );
+
+            AiProviderResponse aiResponse = aiProvider.analyzeError(request);
+
+            analysis.markAsDone(
+                    aiResponse.probableCause(),
+                    aiResponse.whereToLook(),
+                    aiResponse.suggestedFix(),
+                    aiResponse.risk(),
+                    aiResponse.category(),
+                    aiProvider.getProviderName()
+            );
+        } catch (Exception ex) {
+            analysis.markAsError(ex.getMessage());
+            throw ex;
+        }
+    }
+
     public List<ErrorAnalysisHistoryResponse> findAll() {
         return repository.findAll()
                 .stream()
@@ -58,6 +124,7 @@ public class ErrorAnalysisService {
                         analysis.getTitle(),
                         analysis.getCategory(),
                         analysis.getProvider(),
+                        analysis.getStatus().name(),
                         analysis.getCreatedAt()
                 ))
                 .toList();
@@ -78,7 +145,10 @@ public class ErrorAnalysisService {
                 analysis.getRisk(),
                 analysis.getCategory(),
                 analysis.getProvider(),
-                analysis.getCreatedAt()
+                analysis.getStatus().name(),
+                analysis.getCreatedAt(),
+                analysis.getProcessedAt(),
+                analysis.getErrorMessage()
         );
     }
 }

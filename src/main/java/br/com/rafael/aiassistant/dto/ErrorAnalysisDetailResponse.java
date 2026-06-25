@@ -13,6 +13,9 @@ public record ErrorAnalysisDetailResponse(
         String risk,
         String category,
         String provider,
-        LocalDateTime createdAt
+        String status,
+        LocalDateTime createdAt,
+        LocalDateTime processedAt,
+        String errorMessage
 ) {
 }
