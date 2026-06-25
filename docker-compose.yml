@@ -24,12 +24,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_started
     environment:
       APP_AI_PROVIDER: openai
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SPRING_AI_OPENAI_API_KEY: ${OPENAI_API_KEY}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aiassistant
       SPRING_DATASOURCE_USERNAME: aiassistant
       SPRING_DATASOURCE_PASSWORD: aiassistant
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: aiassistant
+      SPRING_RABBITMQ_PASSWORD: aiassistant
     ports:
       - "8080:8080"
     healthcheck:
@@ -38,6 +45,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: aiassistant-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: aiassistant
+      RABBITMQ_DEFAULT_PASS: aiassistant
 
 volumes:
   postgres_data:
