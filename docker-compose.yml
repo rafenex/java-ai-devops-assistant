@@ -56,5 +56,24 @@ services:
       RABBITMQ_DEFAULT_USER: aiassistant
       RABBITMQ_DEFAULT_PASS: aiassistant
 
+  prometheus:
+    image: prom/prometheus
+    container_name: aiassistant-prometheus
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    container_name: aiassistant-grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+
 volumes:
   postgres_data:
